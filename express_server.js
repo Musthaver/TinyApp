@@ -12,8 +12,8 @@ const urlDatabase = {
 };
 
 const generateRandomString = () => {
-let shortURL = Math.random().toString(36).substring(7);
-return shortURL;
+    let shortURL = Math.random().toString(36).substring(7);
+    return shortURL;
 }  
 
 app.get("/", (req, res) => {
@@ -34,13 +34,14 @@ app.get("/urls/new", (req, res) => {
 
 app.post("/urls", (req, res) => {
     const longURL = req.body.longURL;
-    urlDatabase[generateRandomString()] = longURL
-    res.send("Ok");         // Respond with 'Ok' (we will replace this)
+    const shortURL = generateRandomString()
+    urlDatabase[shortURL] = longURL
+    res.redirect(`/urls/:${shortURL}`)         // Respond with 'Ok' (we will replace this)
 });
 
 app.get("/urls", (req, res) => {
  let templateVars = { urls: urlDatabase };
-res.render("urls_index", templateVars);
+ res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
