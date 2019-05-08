@@ -35,9 +35,7 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-    let templateVars = {
-        username: req.cookies["username"],
-    };
+    let templateVars = {username: req.cookies["username"]};
   res.render("urls_new", templateVars);
 });
 
@@ -63,6 +61,11 @@ app.post("/logout", (req, res) => {
     res.clearCookie("username");
     res.redirect("/urls"); 
 });
+
+app.get("/register", (req, res) => {
+    let templateVars = {username: req.cookies["username"]};
+    res.render("urls_register", templateVars);
+})
 
 app.post("/urls/:shortURL", (req, res) => {
     const long = req.body.longURL;
