@@ -12,13 +12,13 @@
 <body style="font-size:20px; padding:50px;">
     <!-- Add EJS code here -->
     <!-- <header> -->
-         <% include partials/_header.ejs %>
+         <!-- <% include partials/_header.ejs %> -->
     <!-- </header> -->
 
 
     <form method="POST" action="/register">
-    <input type="email" name="email" placeholder="Email" style="width: 300px; margin: 1em">
-    <input type="password" name="password" placeholder="Password" style="width: 300px; margin: 1em">
+    <input type="email" required name="email" placeholder="Email" style="width: 300px; margin: 1em">
+    <input type="password" required name="password" placeholder="Password" style="width: 300px; margin: 1em">
     <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 

@@ -44,6 +44,17 @@ const addUser = (userID, userEmail, userPassword) => {
     return users;
 }
 
+const checkEmailExists = (userEmail) => {
+    for (const key in users) {
+        console.log('running');
+        if (users[key].email === userEmail) {
+            console.log(users[key].email);
+            return true;
+        }
+    }
+    return false;    
+}
+
 app.get("/", (req, res) => {
   res.redirect("/urls/new");
 });
@@ -93,10 +104,16 @@ app.post("/register", (req, res) => {
     let userID = generateRandomString();
     let userEmail = req.body.email;
     let userPassword = req.body.password;
-    addUser(userID, userEmail, userPassword);
-    res.cookie("user_id", userID);
-    console.log(users);
-    res.redirect("/urls"); 
+    console.log(typeof userEmail);
+    if (!userEmail || !userPassword) {
+        res.status(400).send('Error 400: please provide a valid email and password');
+    } else if (checkEmailExists(userEmail)) {
+        res.status(400).send('Error 400: You are already registered. Please login');
+    } else {
+        addUser(userID, userEmail, userPassword);
+        res.cookie("user_id", userID);
+        res.redirect("/urls"); 
+    }
 });
 
 app.post("/urls/:shortURL", (req, res) => {
