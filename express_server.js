@@ -53,17 +53,22 @@ app.get("/urls", (req, res) => {
     res.render("urls_index", templateVars);
 });
 
+app.post("/login", (req, res) => {
+    let username = req.body.username;
+    res.cookie("username", username);
+    res.redirect("/urls"); 
+});
+
+app.post("/logout", (req, res) => {
+    res.clearCookie("username");
+    res.redirect("/urls"); 
+});
+
 app.post("/urls/:shortURL", (req, res) => {
     const long = req.body.longURL;
     const short = req.params.shortURL
     addOrEditDb(short, long);
     res.redirect("/urls");        
-});
-
-app.post("/login", (req, res) => {
-    let username = req.body.username;
-    res.cookie("username", username);
-    res.redirect("/urls"); 
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
