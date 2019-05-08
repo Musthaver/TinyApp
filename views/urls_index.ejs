@@ -13,12 +13,12 @@
     <header>
         <% include partials/_header.ejs %>
     </header>
-    <a href="url">Create New TinyURL</a>
+    <a href="#">Create New TinyURL</a>
     <h2>My URLs</h2>
-    <ul>
+    <!-- <ul> -->
         <% for (var key in urls) { %>
-            <li><b><%= urls[key] %></b> - <%= key %></li>
+            <b><%= urls[key] %></b> - <%= key %><form method="POST" action=/urls/<%= key %>/delete><button class="btn btn-primary">delete</button></form>
         <% } %>
-    </ul>
+    <!-- </ul> -->
 </body>
 </html>
