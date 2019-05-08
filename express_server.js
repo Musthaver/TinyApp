@@ -16,7 +16,7 @@ const generateRandomString = () => {
     return shortURL;
 }  
 
-const addPropToDb = (key, value) => {
+const addOrEditDb = (key, value) => {
     urlDatabase[key] = value;
 };
 
@@ -39,7 +39,7 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
     const long = req.body.longURL;
     const short = generateRandomString();
-    addPropToDb(short, long);
+    addOrEditDb(short, long);
     res.redirect(`/urls/${short}`)        
 });
 
@@ -53,7 +53,7 @@ app.post("/urls/:shortURL", (req, res) => {
     const short = req.params.shortURL
     console.log("short: ", short);
     console.log("long: ", long);
-    addPropToDb(short, long);
+    addOrEditDb(short, long);
     res.redirect("/urls");        
 });
 
