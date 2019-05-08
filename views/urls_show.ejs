@@ -14,7 +14,13 @@
          <% include partials/_header.ejs %>
     </header>
     <a href="#">Create New TinyURL</a>
-    <h3>TinyURL for <%= longURL %></h3>
-    <p><%= shortURL %></p>
+    <p></p>
+    
+    <h3>Your new TinyURL: <%= shortURL %></h3>
+    <h6>for <b><%= longURL %></b>. If this is not the correct address, please edit it below.</h6>
+    <div class="form-inline">
+        <form method="POST" action="/urls"><input class="form-control" type="URL" name="longURL" placeholder="<%= longURL %>" style="width: 300px; margin: 1em"></form>
+        <button type="submit" class="btn btn-secondary">Edit</button>
+    </div>
 </body>
 </html>
