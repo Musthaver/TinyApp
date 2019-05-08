@@ -13,6 +13,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+    "userRandomID": {
+      id: "userRandomID", 
+      email: "user@example.com", 
+      password: "purple-monkey-dinosaur"
+    },
+   "user2RandomID": {
+      id: "user2RandomID", 
+      email: "user2@example.com", 
+      password: "dishwasher-funk"
+    }
+}
+
 const generateRandomString = () => {
     let shortURL = Math.random().toString(36).substring(7);
     return shortURL;
@@ -21,6 +34,15 @@ const generateRandomString = () => {
 const addOrEditDb = (key, value) => {
     urlDatabase[key] = value;
 };
+
+const addUser = (userID, userEmail, userPassword) => {
+    users[userID] = {
+        id: userID,
+        email: userEmail,
+        password: userPassword,
+    }
+    return users;
+}
 
 app.get("/", (req, res) => {
   res.redirect("/urls/new");
@@ -65,7 +87,17 @@ app.post("/logout", (req, res) => {
 app.get("/register", (req, res) => {
     let templateVars = {username: req.cookies["username"]};
     res.render("urls_register", templateVars);
-})
+});
+
+app.post("/register", (req, res) => {
+    let userID = generateRandomString();
+    let userEmail = req.body.email;
+    let userPassword = req.body.password;
+    addUser(userID, userEmail, userPassword);
+    res.cookie("user_id", userID);
+    console.log(users);
+    res.redirect("/urls"); 
+});
 
 app.post("/urls/:shortURL", (req, res) => {
     const long = req.body.longURL;
