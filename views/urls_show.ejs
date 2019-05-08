@@ -16,7 +16,7 @@
     <a href="#">Create New TinyURL</a>
     <p></p>
     
-    <h3>Your new TinyURL: <%= shortURL %></h3>
+    <h3>Your TinyURL: <%= shortURL %></h3>
     <h6>for <b><%= longURL %></b>. If this is not the correct address, please edit it below.</h6>
     <div class="form-inline">
         <form method="POST" action="/urls/<%= shortURL %>"><input type="URL" name="longURL" value="<%= longURL %>" style="width: 300px; margin: 1em">

@@ -15,11 +15,11 @@
     </header>
     <a href="#">Create New TinyURL</a>
     <h2>My URLs</h2>
-    <ul>
-        <% for (const key in urls) { %>
-           <li><span style="display:inline"><strong><%= urls[key] %></strong> - <%= key %>
-            <form method="POST" action="/urls/<%= key %>/delete"><button class="btn btn-danger">delete</button></form></span></li>
-        <% } %>
-    </ul>
+
+    <% for (const key in urls) { %>
+        <span class="form-inline"><strong><%= urls[key] %></strong> - <%= key %>
+        <a style="margin: 1em" href="urls/<%= key %>">Edit</a>
+        <form method="POST" action="/urls/<%= key %>/delete"><button class="btn btn-danger" style="margin: 1em">delete</button></form></span>
+    <% } %>
 </body>
 </html>
