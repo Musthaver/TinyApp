@@ -47,7 +47,16 @@ app.get("/urls", (req, res) => {
     let templateVars = { urls: urlDatabase };
     res.render("urls_index", templateVars);
 });
-// delete?
+
+app.post("/urls/:shortURL", (req, res) => {
+    const long = req.body.longURL;
+    const short = req.params.shortURL
+    console.log("short: ", short);
+    console.log("long: ", long);
+    addPropToDb(short, long);
+    res.redirect("/urls");        
+});
+
 app.post("/urls/:shortURL/delete", (req, res) => {
     let toDelete = req.params.shortURL;
     delete urlDatabase[toDelete];
