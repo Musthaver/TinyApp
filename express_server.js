@@ -46,13 +46,30 @@ const addUser = (userID, userEmail, userPassword) => {
 
 const checkEmailExists = (userEmail) => {
     for (const key in users) {
-        console.log('running');
         if (users[key].email === userEmail) {
             console.log(users[key].email);
             return true;
         }
     }
     return false;    
+}
+
+const getID = (userEmail) => {
+    for (const key in users) {
+        if (users[key].email === userEmail) {
+            return users[key].id;
+        }
+    }
+}
+
+const checkPassword = (userEmail, userPassword) => {
+    for (const key in users) {
+        if (users[key].email === userEmail && users[key].password === userPassword) {
+            return true;
+
+        }
+    }
+    return false;
 }
 
 app.get("/", (req, res) => {
@@ -90,9 +107,18 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-    let username = req.body.username;
-    res.cookie("username", username);
-    res.redirect("/urls"); 
+    let userEmail = req.body.email;
+    let userPassword = req.body.password;
+    if (!checkEmailExists(userEmail)) {
+        res.status(403).send('Error 403: Sorry, could not find that email address. Please register.');
+    }    
+    if (checkPassword(userEmail, userPassword) === false) {
+        res.status(403).send('Error 403: Sorry, wrong password, please try again.')
+    } else {
+        let userID = getID(userEmail);
+        res.cookie("user_id", userID);
+        res.redirect("/urls"); 
+    }
 });
 
 app.post("/logout", (req, res) => {
@@ -109,14 +135,16 @@ app.post("/register", (req, res) => {
     let userID = generateRandomString();
     let userEmail = req.body.email;
     let userPassword = req.body.password;
-    console.log(typeof userEmail);
+
     if (!userEmail || !userPassword) {
         res.status(400).send('Error 400: please provide a valid email and password');
     } else if (checkEmailExists(userEmail)) {
         res.status(400).send('Error 400: You are already registered. Please login');
     } else {
         addUser(userID, userEmail, userPassword);
-        res.cookie("user_id", userID);
+        let UserID = getID(userEmail)
+
+        res.cookie("user_id", UserID);
         res.redirect("/urls"); 
     }
 });
