@@ -9,8 +9,8 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+    b6UTxQ: { longURL: "https://www.tsn.ca", userID: "user2RandomID" },
+    i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
 };
 
 const users = { 
@@ -53,6 +53,16 @@ const checkEmailExists = (userEmail) => {
     return false;    
 }
 
+const getURLs = (userID) => {
+    const userUrls = {};
+    for (const key in urlDatabase) {
+        if (urlDatabase[key].userID === userID.id) {
+            userUrls[key] = urlDatabase[key];
+        }
+    }
+    return userUrls;
+}
+
 const checkPassword = (userEmail, userPassword) => {
     const user = checkEmailExists(userEmail);
 
@@ -91,8 +101,14 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-    let templateVars = {urls: urlDatabase, currentUser: getCurrentUser(req)};
-    res.render("urls_index", templateVars);
+    const userID = getCurrentUser(req);
+
+    if (userID) {
+        let templateVars = {urls: getURLs(userID), currentUser: getCurrentUser(req)};
+        res.render("urls_index", templateVars);
+    } else {
+        res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+    }
 });
 
 app.post("/urls", (req, res) => {
@@ -146,13 +162,19 @@ app.post("/register", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-    let templateVars = { 
-        shortURL: req.params.shortURL, 
-        longURL: urlDatabase[req.params.shortURL],
-        currentUser: getCurrentUser(req)
-      };
-    res.render("urls_show", templateVars);
-  });
+    const userID = getCurrentUser(req);
+
+    if (userID) {
+        let templateVars = { 
+            shortURL: req.params.shortURL, 
+            longURL: urlDatabase[req.params.shortURL].longURL,
+            currentUser: getCurrentUser(req)
+        };
+        res.render("urls_show", templateVars);
+    } else {
+        res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+    }
+});
 
 app.post("/urls/:shortURL", (req, res) => {
     const {longURL} = req.body;
