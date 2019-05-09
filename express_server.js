@@ -102,8 +102,8 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-    
-    res.render("urls_login");
+    let templateVars = {urls: urlDatabase, userID: req.cookies["user_id"], users: users};
+    res.render("urls_login", templateVars);
 });
 
 app.post("/login", (req, res) => {
@@ -122,7 +122,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-    res.clearCookie("username");
+    res.clearCookie("user_id");
     res.redirect("/urls"); 
 });
 
