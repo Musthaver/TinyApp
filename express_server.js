@@ -2,7 +2,8 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-var cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -18,12 +19,12 @@ const users = {
     "userRandomID": {
       id: "userRandomID", 
       email: "user@example.com", 
-      password: "purple-monkey-dinosaur"
+      password: "$2b$10$mgOCTQHhSfta6Ex.V7XZ7uQ5/OU13m0EAe8yBTPz5zHiwijHIe0ve"
     },
    "user2RandomID": {
       id: "user2RandomID", 
       email: "user2@example.com", 
-      password: "dishwasher-funk"
+      password: "$2b$10$2blnRvJjogWWDFZg65eKQe4Xn9I.QdT7.QA5vgJ2menn.23ZvwMAW"
     }
 }
 
@@ -35,14 +36,16 @@ const addOrEditDb = (key, value, userID) => {
     urlDatabase[key] = {
         longURL: value,
         userID: userID
+    }    
 };
 
 const addUser = (userEmail, userPassword) => {
     const userID = generateRandomString();
+    const hashedPassword = bcrypt.hashSync(userPassword, 10);
     users[userID] = {
         id: userID,
         email: userEmail,
-        password: userPassword,
+        password: hashedPassword
     }
     return userID;
 }
@@ -68,8 +71,11 @@ const urlsForUser = (userID) => {
 
 const checkPassword = (userEmail, userPassword) => {
     const user = checkEmailExists(userEmail);
+    const isValid = bcrypt.compareSync(userPassword, user.password);
+    console.log({user});
+    console.log(userPassword);
 
-    if (user && user.password === userPassword) {
+    if (user && isValid) {
         return user.id;
     } else {
         return false;
@@ -114,10 +120,10 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-    const userId = req.cookies['user_id'];
+    const userID = getCurrentUser(req);
     const {longURL} = req.body;
     const shortURL = generateRandomString();
-    addOrEditDb(shortURL, longURL, userId);
+    addOrEditDb(shortURL, longURL, userID);
     res.redirect(`/urls/${shortURL}`)        
 });
 
