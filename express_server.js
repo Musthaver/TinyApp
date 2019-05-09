@@ -31,12 +31,14 @@ const generateRandomString = () => {
     return  Math.random().toString(36).substring(7); 
 }  
 
-const addOrEditDb = (key, value) => {
-    urlDatabase[key] = value;
+const addOrEditDb = (key, value, userID) => {
+    urlDatabase[key] = {
+        longURL: value,
+        userID: userID
 };
 
 const addUser = (userEmail, userPassword) => {
-    let userID = generateRandomString();
+    const userID = generateRandomString();
     users[userID] = {
         id: userID,
         email: userEmail,
@@ -92,7 +94,7 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
     const userID = getCurrentUser(req);
-    let templateVars = {currentUser: getCurrentUser(req)};
+    const templateVars = {currentUser: getCurrentUser(req)};
     if (userID) {
         res.render("urls_new", templateVars);
     } else {
@@ -104,7 +106,7 @@ app.get("/urls", (req, res) => {
     const userID = getCurrentUser(req);
 
     if (userID) {
-        let templateVars = {urls: urlsForUser(userID), currentUser: getCurrentUser(req)};
+        const templateVars = {urls: urlsForUser(userID), currentUser: getCurrentUser(req)};
         res.render("urls_index", templateVars);
     } else {
         res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
@@ -112,14 +114,15 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+    const userId = req.cookies['user_id'];
     const {longURL} = req.body;
     const shortURL = generateRandomString();
-    addOrEditDb(shortURL, longURL);
+    addOrEditDb(shortURL, longURL, userId);
     res.redirect(`/urls/${shortURL}`)        
 });
 
 app.get("/login", (req, res) => {
-    let templateVars = {urls: urlDatabase, currentUser: getCurrentUser(req)};
+    const templateVars = {urls: urlDatabase, currentUser: getCurrentUser(req)};
     res.render("urls_login", templateVars);
 });
 
@@ -143,7 +146,7 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-    let templateVars = {currentUser: getCurrentUser(req)};
+    const templateVars = {currentUser: getCurrentUser(req)};
     res.render("urls_register", templateVars);
 });
 
@@ -174,7 +177,7 @@ app.get("/urls/:shortURL", (req, res) => {
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
             res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
         } else {
-            let templateVars = { 
+            const templateVars = { 
                 shortURL: req.params.shortURL, 
                 longURL: urlDatabase[req.params.shortURL].longURL,
                 currentUser: getCurrentUser(req)
@@ -196,7 +199,7 @@ app.post("/urls/:shortURL", (req, res) => {
         } else {    
             const {longURL} = req.body;
             const {shortURL} = req.params;
-            addOrEditDb(shortURL, longURL);
+            addOrEditDb(shortURL, longURL, userID);
             res.redirect("/urls");
         }  
     }            
@@ -220,7 +223,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-    const longURL = urlDatabase[req.params.shortURL];
+    const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL);
 });
 
