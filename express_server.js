@@ -54,7 +54,7 @@ const checkEmailExists = (userEmail) => {
     return false;    
 }
 
-const getURLs = (userID) => {
+const urlsForUser = (userID) => {
     const userUrls = {};
     for (const key in urlDatabase) {
         if (urlDatabase[key].userID === userID.id) {
@@ -82,7 +82,6 @@ const getCurrentUser = req => {
 };
 
 
-
 app.get("/", (req, res) => {
   res.redirect("/urls/new");
 });
@@ -105,7 +104,7 @@ app.get("/urls", (req, res) => {
     const userID = getCurrentUser(req);
 
     if (userID) {
-        let templateVars = {urls: getURLs(userID), currentUser: getCurrentUser(req)};
+        let templateVars = {urls: urlsForUser(userID), currentUser: getCurrentUser(req)};
         res.render("urls_index", templateVars);
     } else {
         res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
@@ -164,12 +163,14 @@ app.post("/register", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
+    console.log(userID);
 
     if (!userID) {    
-        res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+        res.status(401).send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
     } else {
-        const userUrls = getURLs(userID); 
-        console.log(userUrls);   
+        const userUrls = urlsForUser(userID); 
+        console.log(userUrls);
+        console.log(req.params.body);
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
             res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
         } else {
@@ -184,17 +185,38 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-    const {longURL} = req.body;
-    const {shortURL} = req.params;
+    const userID = getCurrentUser(req);
 
-    addOrEditDb(shortURL, longURL);
-    res.redirect("/urls");        
+    if (!userID) {    
+        res.status(401).send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+    } else {
+        const userUrls = urlsForUser(userID);   
+        if (!userUrls.hasOwnProperty(req.params.shortURL)) {
+            res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
+        } else {    
+            const {longURL} = req.body;
+            const {shortURL} = req.params;
+            addOrEditDb(shortURL, longURL);
+            res.redirect("/urls");
+        }  
+    }            
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-    const {shortURL} = req.params;
-    delete urlDatabase[shortURL];
-    res.redirect("/urls");
+    const userID = getCurrentUser(req);
+
+    if (!userID) {    
+        res.status(401).send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+    } else {
+        const userUrls = urlsForUser(userID);   
+        if (!userUrls.hasOwnProperty(req.params.shortURL)) {
+            res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
+        } else {
+            const {shortURL} = req.params;
+            delete urlDatabase[shortURL];
+            res.redirect("/urls");
+        }
+    }    
 });
 
 app.get("/u/:shortURL", (req, res) => {
