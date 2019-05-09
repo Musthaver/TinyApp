@@ -10,7 +10,8 @@ app.set("view engine", "ejs");
 
 const urlDatabase = {
     b6UTxQ: { longURL: "https://www.tsn.ca", userID: "user2RandomID" },
-    i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
+    i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" },
+    slides: { longURL: "https://www.google.ca", userID: "userRandomID" },
 };
 
 const users = { 
@@ -164,16 +165,22 @@ app.post("/register", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
 
-    if (userID) {
-        let templateVars = { 
-            shortURL: req.params.shortURL, 
-            longURL: urlDatabase[req.params.shortURL].longURL,
-            currentUser: getCurrentUser(req)
-        };
-        res.render("urls_show", templateVars);
-    } else {
+    if (!userID) {    
         res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
-    }
+    } else {
+        const userUrls = getURLs(userID); 
+        console.log(userUrls);   
+        if (!userUrls.hasOwnProperty(req.params.shortURL)) {
+            res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
+        } else {
+            let templateVars = { 
+                shortURL: req.params.shortURL, 
+                longURL: urlDatabase[req.params.shortURL].longURL,
+                currentUser: getCurrentUser(req)
+            };
+            res.render("urls_show", templateVars);
+        } 
+    }       
 });
 
 app.post("/urls/:shortURL", (req, res) => {
