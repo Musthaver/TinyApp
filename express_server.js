@@ -81,8 +81,13 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
+    const userID = getCurrentUser(req);
     let templateVars = {currentUser: getCurrentUser(req)};
-  res.render("urls_new", templateVars);
+    if (userID) {
+        res.render("urls_new", templateVars);
+    } else {
+        res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+    }
 });
 
 app.get("/urls", (req, res) => {
@@ -130,9 +135,9 @@ app.post("/register", (req, res) => {
     const {email, password} = req.body;
 
     if (!email || !password) {
-        res.status(400).send('Error 400: please provide a valid email and password');
+        res.status(400).send('Error 400: please return to the <a href=/register>Registration page</a> and provide a valid email and password');
     } else if (checkEmailExists(email)) {
-        res.status(400).send('Error 400: You are already registered. Please login');
+        res.status(400).send('Error 400: You are already registered. Please <a href=/login>Login</a>.');
     } else {
         const userID = addUser(email, password);
         res.cookie("user_id", userID);
