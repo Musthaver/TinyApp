@@ -2,11 +2,14 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session')
 const bcrypt = require('bcrypt');
 
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+    name: 'session',
+    keys: ['key1', 'key2'],
+}));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -72,8 +75,6 @@ const urlsForUser = (userID) => {
 const checkPassword = (userEmail, userPassword) => {
     const user = checkEmailExists(userEmail);
     const isValid = bcrypt.compareSync(userPassword, user.password);
-    console.log({user});
-    console.log(userPassword);
 
     if (user && isValid) {
         return user.id;
@@ -83,10 +84,10 @@ const checkPassword = (userEmail, userPassword) => {
 }
 
 const getCurrentUser = req => {
-    // read the user id from the cookies
-    const userId = req.cookies['user_id'];
-    // return the user from usersDb with that id
-    return users[userId];
+    console.log(req.session);
+    const userID = req.session.user_id;
+    console.log("reqsession: ", userID);
+    return users[userID];
 };
 
 
@@ -104,18 +105,18 @@ app.get("/urls/new", (req, res) => {
     if (userID) {
         res.render("urls_new", templateVars);
     } else {
-        res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+        res.send("You must be a registered user to acc this page. Please <a href=/login>Login</a> to proceed.");
     }
 });
 
 app.get("/urls", (req, res) => {
     const userID = getCurrentUser(req);
-
+console.log("urls: ", userID);
     if (userID) {
         const templateVars = {urls: urlsForUser(userID), currentUser: getCurrentUser(req)};
         res.render("urls_index", templateVars);
     } else {
-        res.send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+        res.send("You must be a registered user to acces this page. Please <a href=/login>Login</a> to proceed.");
     }
 });
 
@@ -141,13 +142,13 @@ app.post("/login", (req, res) => {
     } else if (!userID) {
         res.status(403).send('Error 403: Sorry, wrong password, please try again.')
     } else {
-        res.cookie("user_id", userID);
+        req.session.user_id = userID;
         res.redirect("/urls"); 
     }
 });
 
 app.post("/logout", (req, res) => {
-    res.clearCookie("user_id");
+    req.session = null
     res.redirect("/urls"); 
 });
 
@@ -165,21 +166,19 @@ app.post("/register", (req, res) => {
         res.status(400).send('Error 400: You are already registered. Please <a href=/login>Login</a>.');
     } else {
         const userID = addUser(email, password);
-        res.cookie("user_id", userID);
+        req.session.user_id = userID;
         res.redirect("/urls"); 
     }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
-    console.log(userID);
 
     if (!userID) {    
-        res.status(401).send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+        res.status(401).send("You must be a registered user to ac page. Please <a href=/login>Login</a> to proceed.");
     } else {
         const userUrls = urlsForUser(userID); 
-        console.log(userUrls);
-        console.log(req.params.body);
+
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
             res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
         } else {
@@ -197,7 +196,7 @@ app.post("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
 
     if (!userID) {    
-        res.status(401).send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+        res.status(401).send("You must be a registered user to this page. Please <a href=/login>Login</a> to proceed.");
     } else {
         const userUrls = urlsForUser(userID);   
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
