@@ -50,7 +50,6 @@ const addUser = (userEmail, userPassword) => {
         email: userEmail,
         password: hashedPassword
     }
-    console.log(users);
     return userID;
 }
 
@@ -91,7 +90,12 @@ const getCurrentUser = req => {
 
 
 app.get("/", (req, res) => {
-  res.redirect("/urls/new");
+    const userID = getCurrentUser(req);
+    if (userID) {
+        res.redirect("/urls");
+    } else {
+        res.redirect("/login");
+    }    
 });
 
 app.get("/urls.json", (req, res) => {
@@ -104,7 +108,7 @@ app.get("/urls", (req, res) => {
         const templateVars = {urls: urlsForUser(userID), currentUser: getCurrentUser(req)};
         res.render("urls_index", templateVars);
     } else {
-        res.send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Document</title></head><body><p>You must be a registered user to acces this page. Please <a href="/login">Login</a> to proceed</p></body></html>');
+        res.send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Document</title></head><body><p>You must be a registered user to access this page. Please <a href="/login">Login</a> to proceed</p></body></html>');
     }
 });
 
@@ -176,7 +180,7 @@ app.get("/urls/new", (req, res) => {
     if (userID) {
         res.render("urls_new", templateVars);
     } else {
-        res.send("You must be a registered user to acc this page. Please <a href=/login>Login</a> to proceed.");
+        res.redirect("/login");
     }
 });
 
@@ -205,7 +209,7 @@ app.post("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
 
     if (!userID) {    
-        res.status(401).send("You must be a registered user to this page. Please <a href=/login>Login</a> to proceed.");
+        res.status(401).send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
     } else {
         const userUrls = urlsForUser(userID);   
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
