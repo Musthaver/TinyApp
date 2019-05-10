@@ -132,16 +132,33 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
     const {email, password} = req.body;
-    const userID = checkPassword(email, password);
 
-    if (!checkEmailExists(email)) {
-        res.status(403).send('Error 403: Sorry, could not find that email address. Please register.');
-    } else if (!userID) {
-        res.status(403).send('Error 403: Sorry, wrong password, please try again.')
+    if (!email || !password) {
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'Please return to the login page and provide a valid email and password.'
+        };
+        res.status(403).render("test_html", templateVars);
+    } else if (!checkEmailExists(email)) {
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'Sorry, could not find that email address. Please register.'
+        };
+            res.status(403).render("test_html", templateVars);
     } else {
-        req.session.user_id = userID;
-        res.redirect("/urls"); 
-    }
+        const userID = checkPassword(email, password);
+        if (!userID) {
+            const userID = checkPassword(email, password);
+            const templateVars = {
+                currentUser: getCurrentUser(req),
+                error: 'Sorry, wrong password. Please try again.'
+        };
+            res.status(403).render("test_html", templateVars);
+        } else {
+            req.session.user_id = userID;
+            res.redirect("/urls"); 
+        }
+    }    
 });
 
 app.post("/logout", (req, res) => {
@@ -164,9 +181,17 @@ app.post("/register", (req, res) => {
     const {email, password} = req.body;
 
     if (!email || !password) {
-        res.status(400).send('Error 400: please return to the <a href=/register>Registration page</a> and provide a valid email and password');
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'please return to the registration page and provide a valid email and password.'
+        };
+        res.status(400).render("test_html", templateVars);
     } else if (checkEmailExists(email)) {
-        res.status(400).send('Error 400: You are already registered. Please <a href=/login>Login</a>.');
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'You are already registered. Please login instead.'
+        };
+        res.status(400).render("test_html", templateVars);
     } else {
         const userID = addUser(email, password);
         req.session.user_id = userID;
@@ -187,13 +212,21 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
 
-    if (!userID) {    
-        res.status(401).send("You must be a registered user to access page. Please <a href=/login>Login</a> to proceed.");
+    if (!userID) {  
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'You must be a registered user to access page. Please login or register to proceed.'
+        };
+        res.render("test_html", templateVars);  
     } else {
         const userUrls = urlsForUser(userID); 
 
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
-            res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
+            const templateVars = {
+                currentUser: getCurrentUser(req),
+                error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
+            };
+            res.render("test_html", templateVars);  
         } else {
             const templateVars = { 
                 shortURL: req.params.shortURL, 
