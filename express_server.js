@@ -108,7 +108,11 @@ app.get("/urls", (req, res) => {
         const templateVars = {urls: urlsForUser(userID), currentUser: getCurrentUser(req)};
         res.render("urls_index", templateVars);
     } else {
-        res.send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Document</title></head><body><p>You must be a registered user to access this page. Please <a href="/login">Login</a> to proceed</p></body></html>');
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'You must be a registered user to access this page. Please login to proceed.'
+        };
+        res.status(401).render("urls_error", templateVars);
     }
 });
 
@@ -138,13 +142,13 @@ app.post("/login", (req, res) => {
             currentUser: getCurrentUser(req),
             error: 'Please return to the login page and provide a valid email and password.'
         };
-        res.status(403).render("test_html", templateVars);
+        res.status(403).render("urls_error", templateVars);
     } else if (!checkEmailExists(email)) {
         const templateVars = {
             currentUser: getCurrentUser(req),
             error: 'Sorry, could not find that email address. Please register.'
         };
-            res.status(403).render("test_html", templateVars);
+            res.status(403).render("urls_error", templateVars);
     } else {
         const userID = checkPassword(email, password);
         if (!userID) {
@@ -152,8 +156,8 @@ app.post("/login", (req, res) => {
             const templateVars = {
                 currentUser: getCurrentUser(req),
                 error: 'Sorry, wrong password. Please try again.'
-        };
-            res.status(403).render("test_html", templateVars);
+            }    
+            res.status(403).render("urls_error", templateVars);
         } else {
             req.session.user_id = userID;
             res.redirect("/urls"); 
@@ -163,8 +167,12 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {
     req.session = null;
-    res.redirect("/login");
-    // res.redirect("/urls"); 
+    
+    //leaving this here before it's a requirement
+    res.redirect("/urls"); 
+
+    //but I think it would make more sense to redirect the user to the login page after login out=
+    // res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
@@ -185,13 +193,13 @@ app.post("/register", (req, res) => {
             currentUser: getCurrentUser(req),
             error: 'please return to the registration page and provide a valid email and password.'
         };
-        res.status(400).render("test_html", templateVars);
+        res.status(400).render("urls_error", templateVars);
     } else if (checkEmailExists(email)) {
         const templateVars = {
             currentUser: getCurrentUser(req),
             error: 'You are already registered. Please login instead.'
         };
-        res.status(400).render("test_html", templateVars);
+        res.status(400).render("urls_error", templateVars);
     } else {
         const userID = addUser(email, password);
         req.session.user_id = userID;
@@ -211,13 +219,21 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
+    console.log(urlDatabase.hasOwnProperty(req.params.shortURL));
 
-    if (!userID) {  
+
+    if (urlDatabase.hasOwnProperty(req.params.shortURL) === false) {
         const templateVars = {
             currentUser: getCurrentUser(req),
-            error: 'You must be a registered user to access page. Please login or register to proceed.'
+            error: 'This page exists only in your imagination. Click <a href="/">here</a> to return to the homepage.'
         };
-        res.render("test_html", templateVars);  
+        res.render("urls_error", templateVars); 
+    } else if (!userID) {  
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'You must be a registered user to access this page. Please login or register to proceed.'
+        };
+        res.render("urls_error", templateVars);  
     } else {
         const userUrls = urlsForUser(userID); 
 
@@ -226,7 +242,7 @@ app.get("/urls/:shortURL", (req, res) => {
                 currentUser: getCurrentUser(req),
                 error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
             };
-            res.render("test_html", templateVars);  
+            res.render("urls_error", templateVars);  
         } else {
             const templateVars = { 
                 shortURL: req.params.shortURL, 
@@ -241,12 +257,20 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
 
-    if (!userID) {    
-        res.status(401).send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+    if (!userID) { 
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'You must be a registered user to access this page. Please login to proceed.'
+        };
+        res.status(401).render("urls_error", templateVars);   
     } else {
         const userUrls = urlsForUser(userID);   
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
-            res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
+            const templateVars = {
+                currentUser: getCurrentUser(req),
+                error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
+            };
+            res.render("urls_error", templateVars); 
         } else {    
             const {longURL} = req.body;
             const {shortURL} = req.params;
@@ -260,11 +284,19 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     const userID = getCurrentUser(req);
 
     if (!userID) {    
-        res.status(401).send("You must be a registered user to access this page. Please <a href=/login>Login</a> to proceed.");
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'You must be a registered user to access this page. Please login to proceed.'
+        };
+        res.status(401).render("urls_error", templateVars); 
     } else {
         const userUrls = urlsForUser(userID);   
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
-            res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.")
+            const templateVars = {
+                currentUser: getCurrentUser(req),
+                error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
+            };
+            res.render("urls_error", templateVars); 
         } else {
             const {shortURL} = req.params;
             delete urlDatabase[shortURL];
@@ -276,7 +308,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
     const shortURL = req.params.shortURL; 
     if (!urlDatabase.hasOwnProperty(req.params.shortURL)) {
-        res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.");
+        const templateVars = {
+            currentUser: getCurrentUser(req),
+            error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
+        };
+        res.render("urls_error", templateVars); 
     } else {
         const longURL = urlDatabase[req.params.shortURL].longURL;
         res.redirect(longURL);
