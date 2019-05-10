@@ -30,11 +30,12 @@ const users = {
       password: "$2b$10$2blnRvJjogWWDFZg65eKQe4Xn9I.QdT7.QA5vgJ2menn.23ZvwMAW"
     }
 }
-//generate string for userID
+//generate string for userID and shortURL
 const generateRandomString = () => {
     return  Math.random().toString(36).substring(7); 
 }  
 
+//add or edit a URL to the user's database
 const addOrEditURL = (key, value, user) => {
     urlDatabase[key] = {
         longURL: value,
@@ -42,6 +43,7 @@ const addOrEditURL = (key, value, user) => {
     }
 };
 
+//add a newly registered user to the users database
 const addUser = (userEmail, userPassword) => {
     const userID = generateRandomString();
     const hashedPassword = bcrypt.hashSync(userPassword, 10);
@@ -53,6 +55,7 @@ const addUser = (userEmail, userPassword) => {
     return userID;
 }
 
+//verify if email provided exists in users database
 const checkEmailExists = (userEmail) => {
     for (const key in users) {
         if (users[key].email === userEmail) {
@@ -62,6 +65,7 @@ const checkEmailExists = (userEmail) => {
     return false;    
 }
 
+//filer the urlDatabase for a user's URLs
 const urlsForUser = (user) => {
     const userUrls = {};
     for (const key in urlDatabase) {
@@ -72,6 +76,7 @@ const urlsForUser = (user) => {
     return userUrls;
 }
 
+//verify if password is valid(verifies if email even exists first)
 const checkPassword = (userEmail, userPassword) => {
     const user = checkEmailExists(userEmail);
 
@@ -87,12 +92,13 @@ const checkPassword = (userEmail, userPassword) => {
     }
 }
 
+//requesting cookie 
 const getCurrentUser = req => {
     const userID = req.session.user_id;
     return users[userID];
 };
 
-
+//direct user to urls if logged in, to login if not
 app.get("/", (req, res) => {
     const user = getCurrentUser(req);
     if (user) {
@@ -106,20 +112,22 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//display list of TinyURLs for the user if loggedin, if not error message
 app.get("/urls", (req, res) => {
     const user = getCurrentUser(req);
     if (user) {
-        const templateVars = {urls: urlsForUser(user), user: getCurrentUser(req)};
+        const templateVars = {urls: urlsForUser(user), user: user};
         res.render("urls_index", templateVars);
     } else {
         const templateVars = {
-            user: getCurrentUser(req),
+            user: user,
             error: 'You must be a registered user to access this page. Please login to proceed.'
         };
         res.status(401).render("urls_error", templateVars);
     }
 });
 
+//add a url from /new
 app.post("/urls", (req, res) => {
     const user = getCurrentUser(req);
     const longURL = req.body.longURL;
@@ -128,16 +136,18 @@ app.post("/urls", (req, res) => {
     res.redirect(`/urls/${shortURL}`)        
 });
 
+//login form, but if user is already logged on redirect to index
 app.get("/login", (req, res) => {
     const user = getCurrentUser(req);
     if (user) {
      res.redirect("/urls");
     } else {
-    const templateVars = {urls: urlDatabase, user: getCurrentUser(req)};
+    const templateVars = {user: user};
     res.render("urls_login", templateVars);
     }
 });
 
+//login that verifies if fields are empty, if email exists, if password correct
 app.post("/login", (req, res) => {
     const {email, password} = req.body;
 
@@ -169,6 +179,7 @@ app.post("/login", (req, res) => {
     }    
 });
 
+//logout clear cookies and redirect to index
 app.post("/logout", (req, res) => {
     req.session = null;
     
@@ -179,16 +190,18 @@ app.post("/logout", (req, res) => {
     // res.redirect("/login");
 });
 
+//redirect to index unless already logged in
 app.get("/register", (req, res) => {
     const user = getCurrentUser(req);
     if (user) {
         res.redirect("/urls");
     } else {
-    const templateVars = {user: getCurrentUser(req)};
+    const templateVars = {user: user};
     res.render("urls_register", templateVars);
     }
 });
 
+//registration. verifies fields have values, if email exists, adds user
 app.post("/register", (req, res) => {
     const {email, password} = req.body;
 
@@ -211,9 +224,10 @@ app.post("/register", (req, res) => {
     }
 });
 
+//redirect to login if user not loggedin
 app.get("/urls/new", (req, res) => {
     const user = getCurrentUser(req);
-    const templateVars = {user: getCurrentUser(req)};
+    const templateVars = {user: user};
     if (user) {
         res.render("urls_new", templateVars);
     } else {
@@ -221,18 +235,19 @@ app.get("/urls/new", (req, res) => {
     }
 });
 
+//if :short exists, if user logged on, if :short belongs to user, show :short page
 app.get("/urls/:shortURL", (req, res) => {
     const user = getCurrentUser(req);
 
     if (urlDatabase.hasOwnProperty(req.params.shortURL) === false) {
         const templateVars = {
-            user: getCurrentUser(req),
+            user: user,
             error: 'This page exists only in your imagination. Click <a href="/">here</a> to return to the homepage.'
         };
         res.render("urls_error", templateVars); 
     } else if (!user) {  
         const templateVars = {
-            user: getCurrentUser(req),
+            user: user,
             error: 'You must be a registered user to access this page. Please login or register to proceed.'
         };
         res.render("urls_error", templateVars);  
@@ -241,7 +256,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
             const templateVars = {
-                user: getCurrentUser(req),
+                user: user,
                 error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
             };
             res.render("urls_error", templateVars);  
@@ -249,19 +264,20 @@ app.get("/urls/:shortURL", (req, res) => {
             const templateVars = { 
                 shortURL: req.params.shortURL, 
                 longURL: urlDatabase[req.params.shortURL].longURL,
-                user: getCurrentUser(req)
+                user: user
             };
             res.render("urls_show", templateVars);
         } 
     }       
 });
 
+//if user is logged in, if url belongs to user, edits the long URL
 app.post("/urls/:shortURL", (req, res) => {
     const user = getCurrentUser(req);
 
     if (!user) { 
         const templateVars = {
-            user: getCurrentUser(req),
+            user: user,
             error: 'You must be a registered user to access this page. Please login to proceed.'
         };
         res.status(401).render("urls_error", templateVars);   
@@ -269,7 +285,7 @@ app.post("/urls/:shortURL", (req, res) => {
         const userUrls = urlsForUser(user);   
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
             const templateVars = {
-                user: getCurrentUser(req),
+                user: user,
                 error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
             };
             res.render("urls_error", templateVars); 
@@ -282,12 +298,13 @@ app.post("/urls/:shortURL", (req, res) => {
     }            
 });
 
+//verify user, if url belongs to user, delets url and redirects
 app.post("/urls/:shortURL/delete", (req, res) => {
     const user = getCurrentUser(req);
 
     if (!user) {    
         const templateVars = {
-            user: getCurrentUser(req),
+            user: user,
             error: 'You must be a registered user to access this page. Please login to proceed.'
         };
         res.status(401).render("urls_error", templateVars); 
@@ -295,7 +312,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
         const userUrls = urlsForUser(user);   
         if (!userUrls.hasOwnProperty(req.params.shortURL)) {
             const templateVars = {
-                user: getCurrentUser(req),
+                user: user,
                 error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
             };
             res.render("urls_error", templateVars); 
@@ -307,6 +324,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     }    
 });
 
+//verifies shorturl is in DB, redirects to longurl
 app.get("/u/:shortURL", (req, res) => {
     const shortURL = req.params.shortURL; 
     if (!urlDatabase.hasOwnProperty(req.params.shortURL)) {
@@ -321,6 +339,7 @@ app.get("/u/:shortURL", (req, res) => {
     }
 });
 
+//running
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
