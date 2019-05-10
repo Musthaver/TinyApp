@@ -38,7 +38,7 @@ const generateRandomString = () => {
 const addOrEditDb = (key, value, userID) => {
     urlDatabase[key] = {
         longURL: value,
-        userID: userID
+        userID: userID.id
     }    
 };
 
@@ -50,6 +50,7 @@ const addUser = (userEmail, userPassword) => {
         email: userEmail,
         password: hashedPassword
     }
+    console.log(users);
     return userID;
 }
 
@@ -84,9 +85,7 @@ const checkPassword = (userEmail, userPassword) => {
 }
 
 const getCurrentUser = req => {
-    console.log(req.session);
     const userID = req.session.user_id;
-    console.log("reqsession: ", userID);
     return users[userID];
 };
 
@@ -99,38 +98,32 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/urls/new", (req, res) => {
-    const userID = getCurrentUser(req);
-    const templateVars = {currentUser: getCurrentUser(req)};
-    if (userID) {
-        res.render("urls_new", templateVars);
-    } else {
-        res.send("You must be a registered user to acc this page. Please <a href=/login>Login</a> to proceed.");
-    }
-});
-
 app.get("/urls", (req, res) => {
     const userID = getCurrentUser(req);
-console.log("urls: ", userID);
     if (userID) {
         const templateVars = {urls: urlsForUser(userID), currentUser: getCurrentUser(req)};
         res.render("urls_index", templateVars);
     } else {
-        res.send("You must be a registered user to acces this page. Please <a href=/login>Login</a> to proceed.");
+        res.send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Document</title></head><body><p>You must be a registered user to acces this page. Please <a href="/login">Login</a> to proceed</p></body></html>');
     }
 });
 
 app.post("/urls", (req, res) => {
     const userID = getCurrentUser(req);
-    const {longURL} = req.body;
+    const longURL = req.body.longURL;
     const shortURL = generateRandomString();
     addOrEditDb(shortURL, longURL, userID);
     res.redirect(`/urls/${shortURL}`)        
 });
 
 app.get("/login", (req, res) => {
+    const userID = getCurrentUser(req);
+    if (userID) {
+     res.redirect("/urls");
+    } else {
     const templateVars = {urls: urlDatabase, currentUser: getCurrentUser(req)};
     res.render("urls_login", templateVars);
+    }
 });
 
 app.post("/login", (req, res) => {
@@ -148,13 +141,19 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-    req.session = null
-    res.redirect("/urls"); 
+    req.session = null;
+    res.redirect("/login");
+    // res.redirect("/urls"); 
 });
 
 app.get("/register", (req, res) => {
+    const userID = getCurrentUser(req);
+    if (userID) {
+        res.redirect("/urls");
+    } else {
     const templateVars = {currentUser: getCurrentUser(req)};
     res.render("urls_register", templateVars);
+    }
 });
 
 app.post("/register", (req, res) => {
@@ -171,11 +170,21 @@ app.post("/register", (req, res) => {
     }
 });
 
+app.get("/urls/new", (req, res) => {
+    const userID = getCurrentUser(req);
+    const templateVars = {currentUser: getCurrentUser(req)};
+    if (userID) {
+        res.render("urls_new", templateVars);
+    } else {
+        res.send("You must be a registered user to acc this page. Please <a href=/login>Login</a> to proceed.");
+    }
+});
+
 app.get("/urls/:shortURL", (req, res) => {
     const userID = getCurrentUser(req);
 
     if (!userID) {    
-        res.status(401).send("You must be a registered user to ac page. Please <a href=/login>Login</a> to proceed.");
+        res.status(401).send("You must be a registered user to access page. Please <a href=/login>Login</a> to proceed.");
     } else {
         const userUrls = urlsForUser(userID); 
 
@@ -228,8 +237,13 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-    const longURL = urlDatabase[req.params.shortURL].longURL;
-    res.redirect(longURL);
+    const shortURL = req.params.shortURL; 
+    if (!urlDatabase.hasOwnProperty(req.params.shortURL)) {
+        res.send("Please enter a valid TinyURL address. To see all your TinyURLs, click <a href=/urls>here</a>.");
+    } else {
+        const longURL = urlDatabase[req.params.shortURL].longURL;
+        res.redirect(longURL);
+    }
 });
 
 app.listen(PORT, () => {
