@@ -109,7 +109,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
+    res.json(urlDatabase);
 });
 
 //display list of TinyURLs for the user if loggedin, if not error message
@@ -130,7 +130,7 @@ app.get("/urls", (req, res) => {
 //add a url from /new
 app.post("/urls", (req, res) => {
     const user = getCurrentUser(req);
-    const longURL = req.body.longURL;
+    const {longURL} = req.body;
     const shortURL = generateRandomString();
     addOrEditURL(shortURL, longURL, user);
     res.redirect(`/urls/${shortURL}`)        
@@ -140,10 +140,10 @@ app.post("/urls", (req, res) => {
 app.get("/login", (req, res) => {
     const user = getCurrentUser(req);
     if (user) {
-     res.redirect("/urls");
+        res.redirect("/urls");
     } else {
-    const templateVars = {user: user};
-    res.render("urls_login", templateVars);
+        const templateVars = {user: user};
+        res.render("urls_login", templateVars);
     }
 });
 
@@ -196,8 +196,8 @@ app.get("/register", (req, res) => {
     if (user) {
         res.redirect("/urls");
     } else {
-    const templateVars = {user: user};
-    res.render("urls_register", templateVars);
+        const templateVars = {user: user};
+        res.render("urls_register", templateVars);
     }
 });
 
@@ -326,20 +326,21 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //verifies shorturl is in DB, redirects to longurl
 app.get("/u/:shortURL", (req, res) => {
-    const shortURL = req.params.shortURL; 
-    if (!urlDatabase.hasOwnProperty(req.params.shortURL)) {
+    const {shortURL} = req.params; 
+    
+    if (!urlDatabase.hasOwnProperty(shortURL)) {
         const templateVars = {
             user: getCurrentUser(req),
             error: 'Please enter a valid TinyURL address. To see all your TinyURLs, click <a href="/urls">here</a>.'
         };
         res.render("urls_error", templateVars); 
     } else {
-        const longURL = urlDatabase[req.params.shortURL].longURL;
+        const {longURL} = urlDatabase[shortURL];
         res.redirect(longURL);
     }
 });
 
 //running
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+    console.log(`Example app listening on port ${PORT}!`);
 });
